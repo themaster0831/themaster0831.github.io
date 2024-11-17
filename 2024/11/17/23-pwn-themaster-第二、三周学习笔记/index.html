@@ -1,0 +1,504 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Master的妙妙屋 | Master的妙妙屋</title><meta name="author" content="themaster"><meta name="copyright" content="themaster"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Linux终端 在使用LInux时，我们并不是直接与底层系统交互的，而是通过一个名为“Shell”的中间程序来完成的。除此以外，Linux系统还提供了一个模拟终端的程序“Terminal”（终端模拟器）。 终端本质上是对应着Linux上的&#x2F;dev&#x2F;tty设备，Linux的多用户登录就是通过不同的&#x2F;dev&#x2F;tty设备来完成的。Linux系统默认提供了6个纯命令">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Master的妙妙屋">
+<meta property="og:url" content="http://www.themaster.fun/2024/11/17/23-pwn-themaster-%E7%AC%AC%E4%BA%8C%E3%80%81%E4%B8%89%E5%91%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="Master的妙妙屋">
+<meta property="og:description" content="Linux终端 在使用LInux时，我们并不是直接与底层系统交互的，而是通过一个名为“Shell”的中间程序来完成的。除此以外，Linux系统还提供了一个模拟终端的程序“Terminal”（终端模拟器）。 终端本质上是对应着Linux上的&#x2F;dev&#x2F;tty设备，Linux的多用户登录就是通过不同的&#x2F;dev&#x2F;tty设备来完成的。Linux系统默认提供了6个纯命令">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://www.themaster.fun/image/head.jpg">
+<meta property="article:published_time" content="2024-11-17T14:38:20.217Z">
+<meta property="article:modified_time" content="2024-11-17T14:40:07.624Z">
+<meta property="article:author" content="themaster">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://www.themaster.fun/image/head.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://www.themaster.fun/2024/11/17/23-pwn-themaster-%E7%AC%AC%E4%BA%8C%E3%80%81%E4%B8%89%E5%91%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          const hour = new Date().getHours()
+          const isNight = hour <= 6 || hour >= 18
+          if (theme === undefined) isNight ? activateDarkMode() : activateLightMode()
+          else theme === 'light' ? activateLightMode() : activateDarkMode()
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: {"limitDay":365,"position":"top","messagePrev":"It has been","messageNext":"days since the last update, the content of the article may be outdated."},
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: themaster","link":"链接: ","source":"来源: Master的妙妙屋","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Master的妙妙屋',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-11-17 22:40:07',
+  isShuoshuo: false
+}</script><link rel="stylesheet" href="/css/juzhong.css?1"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load', preloader.endLoading)
+
+  if (true) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/head.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">3</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-graduation-cap"></i><span> 博文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></li></ul></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 生活</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/shuoshuo/"><i class="fa-fw fa fa-comments-o"></i><span> 分享</span></a></li><li><a class="site-page child" href="/photos/"><i class="fa-fw fa fa-camera-retro"></i><span> 相册</span></a></li><li><a class="site-page child" href="/music/"><i class="fa-fw fa fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/links/"><i class="fa-fw fa fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/comment/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于笔者</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/top_img.jpeg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Master的妙妙屋</span></a><a class="nav-page-title" href="/"><span class="site-name">Master的妙妙屋</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-graduation-cap"></i><span> 博文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></li></ul></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 生活</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/shuoshuo/"><i class="fa-fw fa fa-comments-o"></i><span> 分享</span></a></li><li><a class="site-page child" href="/photos/"><i class="fa-fw fa fa-camera-retro"></i><span> 相册</span></a></li><li><a class="site-page child" href="/music/"><i class="fa-fw fa fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/links/"><i class="fa-fw fa fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/comment/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于笔者</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">无标题</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-11-17T14:38:20.217Z" title="发表于 2024-11-17 22:38:20">2024-11-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-11-17T14:40:07.624Z" title="更新于 2024-11-17 22:40:07">2024-11-17</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.9k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>6分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><p>Linux终端</p>
+<p>在使用LInux时，我们并不是直接与底层系统交互的，而是通过一个名为“Shell”的中间程序来完成的。除此以外，Linux系统还提供了一个模拟终端的程序“Terminal”（终端模拟器）。</p>
+<p>终端本质上是对应着Linux上的&#x2F;dev&#x2F;tty设备，Linux的多用户登录就是通过不同的&#x2F;dev&#x2F;tty设备来完成的。Linux系统默认提供了6个纯命令行界面的“terminal”来让用户登录，通过<code>Ctrl + Alt + F1 ~ F6</code>来切换。如果想回到图形界面可以按下<code>Ctel + Alt + F7</code>。</p>
+<h4 id="Shell-壳"><a href="#Shell-壳" class="headerlink" title="Shell(壳)"></a>Shell(壳)</h4><p>“壳”–“核”  ~~  “Shell”–“UNIX&#x2F;LInux内核”。</p>
+<p><font style="color:#000000;background-color:#D9EAFC;">Shell是</font>指“提供给使用者使用界面”的<font style="background-color:#D9EAFC;">命令解释器</font>。（之所以被称作是Shell是因为它隐藏了操作系统的底层细节）</p>
+<h4 id="Linux命令"><a href="#Linux命令" class="headerlink" title="Linux命令"></a>Linux命令</h4><h5 id="常用快捷键"><a href="#常用快捷键" class="headerlink" title="常用快捷键"></a>常用快捷键</h5><table>
+<thead>
+<tr>
+<th align="center"><font style="color:#DF2A3F;">Ctrl + c</font></th>
+<th align="center">强行终止当前程序</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><font style="color:#DF2A3F;">Ctrl + d</font></td>
+<td align="center">键盘输入结束或退出终端</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">Ctrl + s</font></td>
+<td align="center">暂停当前程序，暂停后按任意键恢复运行</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">Ctrl + z</font></td>
+<td align="center">将当前程序放到后台运行，恢复到前台的为命令<font style="color:#DF2A3F;">fg</font></td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">Ctrl + a</font></td>
+<td align="center">将光标移至行头，相当于<font style="color:#DF2A3F;">Home</font>键</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">Ctrl + e</font></td>
+<td align="center">将光标移至行末，相当于<font style="color:#DF2A3F;">End</font>键</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">Ctrl + k</font></td>
+<td align="center">删除从光标所在位置到行末</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">Alt + Backspace</font></td>
+<td align="center">向前删除一个单词</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">Shift + PgUp</font></td>
+<td align="center">将终端显示向上滚动</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">Shift + PgDn</font></td>
+<td align="center">将终端显示向下滚动</td>
+<td></td>
+</tr>
+</tbody></table>
+<h5 id="通配符"><a href="#通配符" class="headerlink" title="通配符"></a>通配符</h5><p>通配符主要有星号（*）和问号（？），其<font style="background-color:#D9EAFC;">用途是</font>为了<font style="background-color:#D9EAFC;">对字符串进行模糊匹配</font>。</p>
+<p><font style="color:#DF2A3F;">**</font>	<u>在终端里面输入的通配符由Shell来处理，并不是由所涉及的命令语句来处理的，它只会出现在命令的“参数里”。</u></p>
+<p>当Shell在“参数值”中遇到通配符时，Shell会将其当做路径或文件名在磁盘上搜寻可能得匹配；如果符合要求的匹配存在，则进行代换（路径拓展）；否则将该通配符作为一个普通的字符传递给“命令”。在通配符被处理后，Shell会先完成该命令的重组，然后继续处理重组后的命令，直至执行该命令。</p>
+<p>常见通配符</p>
+<table>
+<thead>
+<tr>
+<th align="center"><font style="color:#DF2A3F;">*</font></th>
+<th align="center">匹配 0 或多个字符<font style="color:#DF2A3F;">（也可以把 * 理解成“全部”的意思</font>）</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><font style="color:#DF2A3F;">？</font></td>
+<td align="center">匹配任意一个字符</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">[list]</font></td>
+<td align="center">匹配 list中的任意单一字符</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">[^list]</font></td>
+<td align="center">匹配 除list中的任意单一字符以外的字符</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">[c1-c2]</font></td>
+<td align="center">匹配c1-c2中的任意单一字符。如：[0-9][a-z]</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">{string1,string2,….}</font></td>
+<td align="center">匹配string1或string2其一字符串</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">{c1..c2}</font></td>
+<td align="center">匹配c1-c2中全部字符 如下文例2中{1..10}</td>
+<td></td>
+</tr>
+</tbody></table>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">touch</span> demo01.cpp demo02.txt</span><br><span class="line"><span class="built_in">ls</span> *.cpp</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731845588952-b34abfe1-d03c-4f54-b25d-6bccd040c6bd.png"></p>
+<p>例2：同时创建多个文件，可使用<code>&#123;1..n&#125;</code>来同时创建n个文件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">touch</span> love_&#123;1..10&#125;.txt</span><br><span class="line"><span class="built_in">ls</span> *.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731845811661-2fb760f3-45b3-40be-aebe-905ed13c9be7.png"></p>
+<h5 id="man命令（Manual-pages的缩写）"><a href="#man命令（Manual-pages的缩写）" class="headerlink" title="man命令（Manual pages的缩写）"></a>man命令（Manual pages的缩写）</h5><p>3.3.1	Manual pages 是 UNIX 或类 UNIX操作系统中在线软件文档的一种普遍形式，内容包括计算机程序（库和系统调用等）、正式的标准和惯例，甚至是抽象的概念。</p>
+<p>3.3.2	使用格式</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">man &lt;command_name&gt;</span><br></pre></td></tr></table></figure>
+
+<p>手册通常被分为8个分区：</p>
+<table>
+<thead>
+<tr>
+<th align="center">1</th>
+<th align="center">一般命令</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">2</td>
+<td align="center">系统调用</td>
+<td></td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="center">库函数，（包含C标准函数库）</td>
+<td></td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td align="center">特殊文件（通常是&#x2F;dev 中的设备）和驱动程序</td>
+<td></td>
+</tr>
+<tr>
+<td align="center">5</td>
+<td align="center">文件格式和约定</td>
+<td></td>
+</tr>
+<tr>
+<td align="center">6</td>
+<td align="center">游戏和屏保</td>
+<td></td>
+</tr>
+<tr>
+<td align="center">7</td>
+<td align="center">杂项</td>
+<td></td>
+</tr>
+<tr>
+<td align="center">8</td>
+<td align="center">系统管理命令和守护进程</td>
+<td></td>
+</tr>
+</tbody></table>
+<h4 id="Linux用户管理"><a href="#Linux用户管理" class="headerlink" title="Linux用户管理"></a>Linux用户管理</h4><h5 id="查看用户"><a href="#查看用户" class="headerlink" title="查看用户"></a>查看用户</h5><p><code>&lt;font style=&quot;color:#DF2A3F;&quot;&gt;who am i&lt;/font&gt;</code><font style="color:#DF2A3F;">:用来查看打开当前伪终端的用户的用户名。（记录登录shell时的用户，你以什么用户登录就显示什么）</font></p>
+<p><code>&lt;font style=&quot;color:#DF2A3F;&quot;&gt;whoami&lt;/font&gt;</code><font style="color:#DF2A3F;">：查看当前登录的用户的用户名（当前系统的有效用户）</font></p>
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731847508663-8867349f-a533-42b1-8458-fb0c62a25649.png"></p>
+<p>第一列便是相应的用户名了。而第二列的<code>pst/0</code>中<code>pst</code>表示伪终端、后面的数字便是伪终端的序号。使用&#x2F;dev&#x2F;tty7时每打开一个终端，就会产生一个伪终端。（说白了就是，在桌面右击打开的终端，都是伪终端，每次打开，都是在创建新的伪终端。）</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731847863755-06f86696-99ee-40d4-82cb-b1bb0510b1b7.png"></p>
+<p>who命令的其它常用参数</p>
+<table>
+<thead>
+<tr>
+<th align="center">参数</th>
+<th align="center">说明</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><font style="color:#DF2A3F;">-a（all）</font></td>
+<td align="center">打印能打印的全部</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">-d(died)</font></td>
+<td align="center">打印死掉的进程</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">-m</font></td>
+<td align="center">同<code>am i</code>,<code>mom likes</code></td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">-q</font></td>
+<td align="center">打印当前登录用户数及用户名</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">-u</font></td>
+<td align="center">打印当前登录用户登录信息</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><font style="color:#DF2A3F;">-r(rank)</font></td>
+<td align="center">打印运行等级</td>
+<td></td>
+</tr>
+</tbody></table>
+<h5 id="创建用户"><a href="#创建用户" class="headerlink" title="创建用户"></a>创建用户</h5><h6 id="在Linux系统中，root账户拥有整个系统至高无上的权限。"><a href="#在Linux系统中，root账户拥有整个系统至高无上的权限。" class="headerlink" title="在Linux系统中，root账户拥有整个系统至高无上的权限。"></a>在Linux系统中，<font style="color:#DF2A3F;">root</font>账户拥有整个系统至高无上的权限。</h6><p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731848572958-697021b1-152f-4dd9-835b-8b2aec861ec4.png"></p>
+<h6 id="sudo命令（Super-User-Do-）"><a href="#sudo命令（Super-User-Do-）" class="headerlink" title="sudo命令（Super User Do ）"></a>sudo命令（Super User Do ）</h6><p><code>&lt;u&gt;su &lt;user&gt;&lt;/u&gt;</code><u>:切换到用户user，执行时需要输入目标用户的密码</u></p>
+<p><code>&lt;u&gt;su - &lt;user&gt;&lt;/u&gt;</code><u>:切换到目标用户，但是同时用户的环境变量和工作目录也会跟着改变成目标用户所对应的。</u></p>
+<p><code>&lt;u&gt;sudo &lt;cmd&gt;&lt;/u&gt;</code><u>:可以以特权级别运行cmd命令，需要当前用户属于sudo组，且输入当前账户的密码。</u></p>
+<p>例：1.创建一个叫 lilie 的用户，键入以下指令</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> adduser lilei		//这个命令不仅可以添加用户到系统，</span><br><span class="line">                      //同时也默认 为新用户在/home目录下创建一个工作目录</span><br></pre></td></tr></table></figure>
+
+<p>然后就是给 lilei 用户设置密码。然后就可以一路 enter 键直到创建用户结束。</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731849347003-5cd1ca10-b573-4173-b76e-76c359ab5e1c.png"></p>
+<p>依次键入以下命令</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">su -l lilei		//切换到 lilei 用户</span><br><span class="line"><span class="built_in">who</span> am i			//查看登录shell用</span><br><span class="line"><span class="built_in">whoami</span>				//查看当前用户</span><br><span class="line"><span class="built_in">pwd</span>						//查看工作路径（Print Working Directory）</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731850327902-5fbe0886-d8fc-4a68-9229-3f112fce3f33.png"></p>
+<p>(这里可以很明显地看出来<code>who am i</code>和<code>whoami</code>的区别)</p>
+<p>2.用<code>exit</code>命令或快捷键<code>Ctrl + D</code>退出当前用户</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731850461785-db7b25e4-ac96-44f2-98a5-70a10c9aa890.png"></p>
+<h5 id="用户组"><a href="#用户组" class="headerlink" title="用户组"></a>用户组</h5><h6 id=""><a href="#" class="headerlink" title=""></a></h6><p>Linux里面，每个用户都有一个归属（用户组），简单地说就是用户组是一组用户的集合。一个用户可以属于多个用户组。</p>
+<h6 id="查看当前用户归属于那个用户组"><a href="#查看当前用户归属于那个用户组" class="headerlink" title="查看当前用户归属于那个用户组"></a>查看当前用户归属于那个用户组</h6><p>法一：使用 groups 命令查看<code>groups &lt;user&gt;</code></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">groups</span> lilei</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731851111034-ddb44676-43fa-45ee-bbad-ddb0bbd853ce.png"></p>
+<p><font style="color:#DF2A3F;">冒号之前表示用户，冒号之后便是该用户所属用户组。每次新建用户，如果不指定用户组，系统会自动创建一个与用户名相同的用户组。</font></p>
+<p>法二：查看&#x2F;etc&#x2F;group文件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> /etc/group  | <span class="built_in">sort</span>		// | <span class="built_in">sort</span>  表示将读取的文本进行一个字典排序再输出。</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731851473539-82d88bc3-fd0f-4f03-a04d-7697be3bd5e5.png"></p>
+<p>但是，这样得到的内容太杂乱，不方便找到目标用户组。</p>
+<p>可以使用 <font style="color:#DF2A3F;">grep </font>命令，过滤掉不需要的结果</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> /etc/group | grep -E <span class="string">&quot;lilei&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731851593771-ec406da0-0657-4eb9-ae0a-6c3635006880.png"></p>
+<p>补：&#x2F;etc&#x2F;group文件格式说明</p>
+<p>&#x2F;etc&#x2F;group 的内容包括 用户组（Group）、用户组口令 、GID（组ID）、及该用户组所包含的用户（User），每个用户组一条记录，格式如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">group_name : password : GID : user_list</span><br></pre></td></tr></table></figure>
+
+<h6 id="将其他用户添加到-sudo-用户组"><a href="#将其他用户添加到-sudo-用户组" class="headerlink" title="将其他用户添加到 sudo 用户组"></a>将其他用户添加到 sudo 用户组</h6><p>默认情况下，新创建的用户是不具有 root 权限的，也不再sudo用户组，可以让其加入sudo用户组从而获得相应权限。</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731852019780-a8815e76-2ced-44db-bebf-189b6309d59b.png"></p>
+<p>使用 usermod 命令为用户添加用户组，<u>使用该命令必须具有root权限</u></p>
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731852278068-51add412-c7fb-41b9-9209-64edc47e21a0.png"></p>
+<h5 id="删除用户和用户组"><a href="#删除用户和用户组" class="headerlink" title="删除用户和用户组"></a>删除用户和用户组</h5><h6 id="使用deluser命令删除用户"><a href="#使用deluser命令删除用户" class="headerlink" title="使用deluser命令删除用户"></a>使用<code>deluser</code>命令删除用户</h6><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> deluser &lt;user_name&gt; --remove-home</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731852510325-cdc64c1b-1fca-45b8-824d-1c02e800001d.png"></p>
+<p>使用<code>--remove-home</code>参数在删除用户时会一并将该用户的工作目录删除。如果不使用那么系统会自动在 &#x2F;home 目录为该用户保留工作目录</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2024/png/40792144/1731852660651-b6636cb7-6dce-496e-9952-555822c51918.png"></p>
+<h6 id="使用groupdel命令删除用户组。必须确保群组中不包含任何用户，才能将群组删除。"><a href="#使用groupdel命令删除用户组。必须确保群组中不包含任何用户，才能将群组删除。" class="headerlink" title="使用groupdel命令删除用户组。必须确保群组中不包含任何用户，才能将群组删除。"></a>使用<code>groupdel</code>命令删除用户组。必须确保群组中不包含任何用户，才能将群组删除。</h6></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://www.themaster.fun">themaster</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://www.themaster.fun/2024/11/17/23-pwn-themaster-%E7%AC%AC%E4%BA%8C%E3%80%81%E4%B8%89%E5%91%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">http://www.themaster.fun/2024/11/17/23-pwn-themaster-%E7%AC%AC%E4%BA%8C%E3%80%81%E4%B8%89%E5%91%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="http://www.themaster.fun" target="_blank">Master的妙妙屋</a>！</span></div></div><div class="tag_share"><div class="post-share"><div class="social-share" data-image="/image/head.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2024/11/01/23-pwn-themaster-%E4%B8%AA%E4%BA%BABlog%E6%90%AD%E5%BB%BA/" title="个人Blog搭建"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">个人Blog搭建</div></div><div class="info-2"><div class="info-item-1"> 本次搭建过程，参考此B站视频 链接 一、Nodejs 与 Git 下载与安装1.Nodejs下载 官网链接：nodejs官网  （如果不想安装在自己的C盘，可以参考这篇修改nodejs缓存路径的文章：参考文章） 2.Git下载 官网链接：Git官网 一路默认点到底就行了。 3.测试是否都安装成功 管理员运行cmd，输入以下指令 node -v npm -v （这个是node附带的）git -v  如果见到以下输出，那么说明安装没有问题。  4.下载hexo npm install hexo-cli -g    二、仓库的搭建成功下载好工具后，接下来便可以着手搭建GitHub存储静态页面的仓库 1.注册&#x2F;登录GitHub 点击Create a new repository进入新建仓库页面 仓库名输入： 用户名.github.io  勾选Public 勾选Add a README file 点击Create创建 2.生成SSH Keys 进入任意文件夹，右键空白处然后点击Git bash here，输入 ssh-keygen -t rsa -C...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/head.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">themaster</div><div class="author-info-description">谦虚稳静，肯下功夫</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">3</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/themaster0831"><i class="fab fa-github"></i><span>🛴前往小家...</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/themaster0831" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:2167667190@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-4"><a class="toc-link" href="#Shell-%E5%A3%B3"><span class="toc-number">1.</span> <span class="toc-text">Shell(壳)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Linux%E5%91%BD%E4%BB%A4"><span class="toc-number">2.</span> <span class="toc-text">Linux命令</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%B8%B8%E7%94%A8%E5%BF%AB%E6%8D%B7%E9%94%AE"><span class="toc-number">2.1.</span> <span class="toc-text">常用快捷键</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E9%80%9A%E9%85%8D%E7%AC%A6"><span class="toc-number">2.2.</span> <span class="toc-text">通配符</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#man%E5%91%BD%E4%BB%A4%EF%BC%88Manual-pages%E7%9A%84%E7%BC%A9%E5%86%99%EF%BC%89"><span class="toc-number">2.3.</span> <span class="toc-text">man命令（Manual pages的缩写）</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Linux%E7%94%A8%E6%88%B7%E7%AE%A1%E7%90%86"><span class="toc-number">3.</span> <span class="toc-text">Linux用户管理</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8B%E7%94%A8%E6%88%B7"><span class="toc-number">3.1.</span> <span class="toc-text">查看用户</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E7%94%A8%E6%88%B7"><span class="toc-number">3.2.</span> <span class="toc-text">创建用户</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#%E5%9C%A8Linux%E7%B3%BB%E7%BB%9F%E4%B8%AD%EF%BC%8Croot%E8%B4%A6%E6%88%B7%E6%8B%A5%E6%9C%89%E6%95%B4%E4%B8%AA%E7%B3%BB%E7%BB%9F%E8%87%B3%E9%AB%98%E6%97%A0%E4%B8%8A%E7%9A%84%E6%9D%83%E9%99%90%E3%80%82"><span class="toc-number">3.2.1.</span> <span class="toc-text">在Linux系统中，root账户拥有整个系统至高无上的权限。</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#sudo%E5%91%BD%E4%BB%A4%EF%BC%88Super-User-Do-%EF%BC%89"><span class="toc-number">3.2.2.</span> <span class="toc-text">sudo命令（Super User Do ）</span></a></li></ol></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%94%A8%E6%88%B7%E7%BB%84"><span class="toc-number">3.3.</span> <span class="toc-text">用户组</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link"><span class="toc-number">3.3.1.</span> <span class="toc-text"></span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8B%E5%BD%93%E5%89%8D%E7%94%A8%E6%88%B7%E5%BD%92%E5%B1%9E%E4%BA%8E%E9%82%A3%E4%B8%AA%E7%94%A8%E6%88%B7%E7%BB%84"><span class="toc-number">3.3.2.</span> <span class="toc-text">查看当前用户归属于那个用户组</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#%E5%B0%86%E5%85%B6%E4%BB%96%E7%94%A8%E6%88%B7%E6%B7%BB%E5%8A%A0%E5%88%B0-sudo-%E7%94%A8%E6%88%B7%E7%BB%84"><span class="toc-number">3.3.3.</span> <span class="toc-text">将其他用户添加到 sudo 用户组</span></a></li></ol></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%88%A0%E9%99%A4%E7%94%A8%E6%88%B7%E5%92%8C%E7%94%A8%E6%88%B7%E7%BB%84"><span class="toc-number">3.4.</span> <span class="toc-text">删除用户和用户组</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8deluser%E5%91%BD%E4%BB%A4%E5%88%A0%E9%99%A4%E7%94%A8%E6%88%B7"><span class="toc-number">3.4.1.</span> <span class="toc-text">使用deluser命令删除用户</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8groupdel%E5%91%BD%E4%BB%A4%E5%88%A0%E9%99%A4%E7%94%A8%E6%88%B7%E7%BB%84%E3%80%82%E5%BF%85%E9%A1%BB%E7%A1%AE%E4%BF%9D%E7%BE%A4%E7%BB%84%E4%B8%AD%E4%B8%8D%E5%8C%85%E5%90%AB%E4%BB%BB%E4%BD%95%E7%94%A8%E6%88%B7%EF%BC%8C%E6%89%8D%E8%83%BD%E5%B0%86%E7%BE%A4%E7%BB%84%E5%88%A0%E9%99%A4%E3%80%82"><span class="toc-number">3.4.2.</span> <span class="toc-text">使用groupdel命令删除用户组。必须确保群组中不包含任何用户，才能将群组删除。</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/11/17/23-pwn-themaster-%E7%AC%AC%E4%BA%8C%E3%80%81%E4%B8%89%E5%91%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="无标题">无标题</a><time datetime="2024-11-17T14:38:20.217Z" title="发表于 2024-11-17 22:38:20">2024-11-17</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/11/01/23-pwn-themaster-%E4%B8%AA%E4%BA%BABlog%E6%90%AD%E5%BB%BA/" title="个人Blog搭建">个人Blog搭建</a><time datetime="2024-10-31T16:00:00.000Z" title="发表于 2024-11-01 00:00:00">2024-11-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/10/31/hello-world/" title="Hello World">Hello World</a><time datetime="2024-10-31T14:28:38.779Z" title="发表于 2024-10-31 22:28:38">2024-10-31</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2024 By themaster</div><div class="footer_custom_text">I wish you to become your own sun, no need to rely on who's light.<p><a target="_blank" href="https://hexo.io/"><img src="https://img.shields.io/badge/Frame-Hexo-blue?style=flat&logo=hexo" title="博客框架为Hexo"></a>&nbsp;<a target="_blank" href="https://butterfly.js.org/"><img src="https://img.shields.io/badge/Theme-Butterfly-6513df?style=flat&logo=bitdefender" title="主题采用butterfly"></a>&nbsp;<a target="_blank" href="https://www.jsdelivr.com/"><img src="https://img.shields.io/badge/CDN-jsDelivr-orange?style=flat&logo=jsDelivr" title="本站使用JsDelivr为静态资源提供CDN加速"></a> &nbsp;<a target="_blank" href="https://vercel.com/ "><img src="https://img.shields.io/badge/Hosted-Vervel-brightgreen?style=flat&logo=Vercel" title="本站采用双线部署，默认线路托管于Vercel"></a>&nbsp;<a target="_blank" href="https://vercel.com/ "><img src="https://img.shields.io/badge/Hosted-Coding-0cedbe?style=flat&logo=Codio" title="本站采用双线部署，联通线路托管于Coding"></a>&nbsp;<a target="_blank" href="https://github.com/"><img src="https://img.shields.io/badge/Source-Github-d021d6?style=flat&logo=GitHub" title="本站项目由Gtihub托管"></a>&nbsp;<a target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img src="https://img.shields.io/badge/Copyright-BY--NC--SA%204.0-d42328?style=flat&logo=Claris" title="本站采用知识共享署名-非商业性使用-相同方式共享4.0国际许可协议进行许可"></a></p></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="chat-btn" type="button" title="聊天"><i class="fas fa-message"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/fireworks.min.js"></script><script defer="defer" id="fluttering_ribbon" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script>(() => {
+  const isChatBtn = true
+  const isChatHideShow = true
+
+  if (isChatBtn) {
+    const close = () => {
+      Chatra('minimizeWidget')
+      Chatra('hide')
+    }
+
+    const open = () => {
+      Chatra('openChat', true)
+      Chatra('show')
+    }
+
+    window.ChatraSetup = { startHidden: true }
+  
+    window.chatBtnFn = () => {
+      document.getElementById('chatra').classList.contains('chatra--expanded') ? close() : open()
+    }
+  } else if (isChatHideShow) {
+    window.chatBtn = {
+      hide: () => Chatra('hide'),
+      show: () => Chatra('show')
+    }
+  }
+
+  (function(d, w, c) {
+    w.ChatraID = ''
+    var s = d.createElement('script')
+    w[c] = w[c] || function() {
+      (w[c].q = w[c].q || []).push(arguments)
+    }
+    s.async = true
+    s.src = 'https://call.chatra.io/chatra.js'
+    if (d.head) d.head.appendChild(s)
+  })(document, window, 'Chatra')
+})()</script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"]):not([href="/music/"]):not([href="/no-pjax/"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => fn())
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      pjax.loadUrl('/404.html')
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
