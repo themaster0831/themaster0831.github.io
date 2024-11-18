@@ -4,6 +4,19 @@
   
     
     <entry>
+      <title>pwn环境搭建</title>
+      <link href="/2024/11/18/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/"/>
+      <url>/2024/11/18/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/</url>
+      
+        <content type="html"><![CDATA[<p><a href="https://blog.csdn.net/j284886202/article/details/134931709">本文参考</a>：<a href="https://blog.csdn.net/j284886202/article/details/134931709">★pwn 22.04环境搭建保姆级教程★_pwn环境搭建-CSDN博客</a></p><hr><p>一、系统环境</p><p>​1.VM虚拟机</p><p>​我去VM官网看了看，emmm，看了半天愣是没看出来该怎么下载。。。</p><p>对于VMware这个软件的安装直接参考这篇文章吧，<a href="https://blog.csdn.net/weixin_52799373/article/details/124324077?ops_request_misc=%257B%2522request%255Fid%2522%253A%25224EFDDA87-6EB8-4C1C-88AC-39D930DEF2CD%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=4EFDDA87-6EB8-4C1C-88AC-39D930DEF2CD&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_positive~default-1-124324077-null-null.142%5Ev100%5Epc_search_result_base5&utm_term=vmware%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B&spm=1018.2226.3001.4187">VMware虚拟机安装Linux教程(超详细)</a></p><p>​2.配置Ubuntu映像</p><p>​2.1 Ubuntu官网</p><p>​<a href="https://ubuntu.com/download/desktop">Ubuntu</a></p><p>![](..&#x2F;..&#x2F;..&#x2F;..&#x2F;图片&#x2F;Screenshots&#x2F;屏幕截图 2024-11-18 170343.png)</p><p>选择一个你想要的版本，直接下载。</p><p>![](..&#x2F;..&#x2F;..&#x2F;..&#x2F;图片&#x2F;Screenshots&#x2F;屏幕截图 2024-11-18 171013.png)</p><p>然后会自动跳转到这个界面，如果没有下载，点击“download now”，下载。</p><p>​2.2 创建虚拟机</p><p>​点击 + 号创建新的虚拟机</p><p>![](..&#x2F;..&#x2F;..&#x2F;..&#x2F;图片&#x2F;Screenshots&#x2F;屏幕截图 2024-11-18 171512.png)</p><p>​</p><p>二、PWN工具安装</p><p>三、Linux系统美化</p>]]></content>
+      
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Linux学习笔记</title>
       <link href="/2024/11/17/23-pwn-themaster-%E7%AC%AC%E4%BA%8C%E3%80%81%E4%B8%89%E5%91%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
       <url>/2024/11/17/23-pwn-themaster-%E7%AC%AC%E4%BA%8C%E3%80%81%E4%B8%89%E5%91%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</url>
